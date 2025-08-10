@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>STS + Ancient Period — Reviewer Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;600&family=Inter:wght@300;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#fbf7ef; --card:#fff; --accent:#6b4226; --muted:#6b6b6b;
+    --correct:#dff0d8; --wrong:#f8d7da;
+  }
+  *{box-sizing:border-box}
+  body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background:var(--bg); color:#222; margin:0; padding:28px;}
+  .container{max-width:1000px;margin:0 auto;}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+  h1{font-family:'Cormorant Garamond', serif;color:var(--accent);margin:0;font-size:clamp(20px,3.5vw,28px)}
+  .meta{font-size:0.9rem;color:var(--muted)}
+  .card{background:var(--card);padding:20px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.06); margin-bottom:18px;}
+  .controls{display:flex;gap:8px;flex-wrap:wrap}
+  button{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600}
+  button.secondary{background:#eee;color:#222}
+  .question{padding:12px;border-radius:8px;border:1px solid rgba(0,0,0,0.04);margin-bottom:12px}
+  .q-title{font-weight:600;margin-bottom:8px}
+  .options label{display:block;padding:8px;border-radius:6px;border:1px solid rgba(0,0,0,0.04);margin-bottom:6px;cursor:pointer}
+  .result-summary{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .badge{padding:8px 12px;border-radius:999px;background:rgba(107,66,38,0.08);color:var(--accent);font-weight:600}
+  .answers{margin-top:14px}
+  .answer-row{padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,0.04); margin-bottom:10px;background:#fff}
+  .ua{font-weight:600}
+  .correct{background:var(--correct);border-color:rgba(34,139,34,0.15)}
+  .wrong{background:var(--wrong);border-color:rgba(220,53,69,0.15)}
+  .explain{font-size:0.95rem;color:var(--muted);margin-top:6px;padding-left:6px}
+  .score{font-size:1.25rem;font-weight:700;color:var(--accent)}
+  footer{margin-top:22px;text-align:center;color:var(--muted);font-size:0.9rem}
+  .small{font-size:0.85rem;color:var(--muted)}
+  .q-count{font-weight:600}
+  .highlight-correct{color:green;font-weight:700}
+  .highlight-wrong{color:red;font-weight:700}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1>STS & Ancient Period — Reviewer</h1>
+      <div class="small">30 randomly selected multiple-choice questions (from combined STS + Ancient Period material).</div>
+    </div>
+    <div class="meta">
+      Highest score: <span id="highest">--</span> / 30
+      <div class="small">(saved in your browser)</div>
+    </div>
+  </header>
+
+  <div class="card" id="quizCard">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div class="q-count">Questions: <strong>30</strong></div>
+      <div class="controls">
+        <button id="startBtn">Start New Quiz</button>
+        <button id="shuffleBtn" class="secondary">Shuffle Questions</button>
+      </div>
+    </div>
+
+    <div id="quizArea">
+      <p class="small">Click "Start New Quiz" to load 30 random questions.</p>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button id="submitBtn" style="display:none">Submit Answers</button>
+      <button id="showAnswersBtn" class="secondary" style="display:none">Show Answers (after submit)</button>
+      <button id="restartBtn" class="secondary" style="display:none">Restart</button>
+    </div>
+  </div>
+
+  <div class="card" id="resultCard" style="display:none">
+    <div class="result-summary">
+      <div>
+        <div class="score" id="scoreText">Score: 0 / 30</div>
+        <div id="gradeMsg" class="small" style="margin-top:6px"></div>
+      </div>
+      <div style="margin-left:auto">
+        <span class="badge" id="percentBadge">0%</span>
+      </div>
+    </div>
+
+    <div id="answersContainer" class="answers"></div>
+  </div>
+
+  <footer>
+    Quiz content created from provided learning PDFs (STS & Ancient Period). Explanations are short summaries drawn from the same materials.
+  </footer>
+</div>
+
+<script>
+/* ===== QUESTION BANK (combined content from the uploaded PDFs) =====
+   Questions cover: definitions of science/technology/society, science as process/product,
+   notable inventions, eco-technologies, ethical dilemmas, ancient period (three-age system),
+   Paleolithic/Mesolithic/Neolithic, Bronze/Iron Ages, Antiquity, early philosophers, etc.
+   Each question object: {q, choices:[..], answer: index (0..3), explain: "..." }
+*/
+const QUESTION_BANK = [
+  { q:"What does STS stand for in the context of the course material?", choices:["Science, Technology, and Society","Society, Tradition, and Science","Systems, Technology, and Strategy","Science, Theory, and Sociology"], answer:0, explain:"STS is the acronym for Science, Technology, and Society; it studies interactions between these fields." },
+
+  { q:"Which best describes 'science' as defined in the material?", choices:["A process of observation and experimentation","A set of religious beliefs","A type of technology","Only facts without methods"], answer:0, explain:"Science was described as a process involving observation, hypothesis, measurement, analysis and experimentation." },
+
+  { q:"Which statement best describes 'technology' (as process)?", choices:["Application of scientific knowledge to make things","A synonym for science","An abstract theory with no practical use","Only software development"], answer:0, explain:"Technology as a process is the application of science to produce tools, methods, and practical solutions." },
+
+  { q:"Which of the following was listed as a notable invention that increased spread of knowledge around 1440?", choices:["Printing press","Wheel","Compass","Telephone"], answer:0, explain:"Gutenberg's printing press (c.1440) revolutionized book production and knowledge dissemination." },
+
+  { q:"Which ancient technology allowed long-distance navigation and was developed in China between the 9th and 11th centuries?", choices:["Compass","Wheel","Printing press","Steam engine"], answer:0, explain:"The compass (lodestone-based) allowed mariners to navigate when stars weren't visible." },
+
+  { q:"Which invention is associated with converting chemical energy into mechanical work and helped drive the Industrial Age?", choices:["Internal combustion engine","Printing press","Wheel","Compass"], answer:0, explain:"The internal combustion engine transformed chemical energy into mechanical work and powered vehicles and machines." },
+
+  { q:"What was ARPANET an early predecessor of?", choices:["The Internet","The Compass","The Printing Press","The Wheel"], answer:0, explain:"ARPANET, developed in the 1960s, preceded the modern Internet." },
+
+  { q:"Which of these is an example of an eco-friendly technology mentioned in the materials?", choices:["Solar energy","Coal-fired power","Single-use plastics","Leaded gasoline"], answer:0, explain:"Solar energy is an eco-friendly technology that uses solar panels to provide electricity." },
+
+  { q:"Which of these is NOT listed as a disadvantage or ethical dilemma of technology?", choices:["Global warming","Greater access to education worldwide","Destruction of environment","Increased unemployment from automation"], answer:1, explain:"Greater access to education is a benefit, while the others are listed as negative consequences." },
+
+  { q:"Around what period does the Ancient Period generally span (per the PDF)?", choices:["ca. 3500 B.C. - 500 A.D.","14th - 17th century","500 - 1500 A.D.","18th century"], answer:0, explain:"The Ancient Period is defined roughly from 3,500 B.C. to 500 A.D." },
+
+  { q:"The Three-Age System classifies prehistoric times into which primary ages?", choices:["Stone, Bronze, Iron","Wood, Clay, Metal","Paleo, Meso, Neo only","Bronze, Copper, Silver"], answer:0, explain:"The classic Three-Age System is Stone Age, Bronze Age, and Iron Age." },
+
+  { q:"Which period is characterized by people being mainly hunters and gatherers and living nomadically in caves?", choices:["Paleolithic","Neolithic","Bronze Age","Iron Age"], answer:0, explain:"The Paleolithic (Old Stone Age) features hunting-gathering and nomadic life." },
+
+  { q:"Which Stone Age period introduced agriculture and domestication of animals (per notes)?", choices:["Neolithic","Paleolithic","Mesolithic","Bronze Age"], answer:0, explain:"The Neolithic (New Stone Age) saw agriculture, settled villages, and domestication." },
+
+  { q:"Which period is known for the widespread use of copper and bronze for tools and weapons?", choices:["Bronze Age","Iron Age","Neolithic","Paleolithic"], answer:0, explain:"The Bronze Age involved extensive copper and bronze metallurgy." },
+
+  { q:"Which metal age followed the Bronze Age in many regions?", choices:["Iron Age","Stone Age","Copper Age","Plastic Age"], answer:0, explain:"The Iron Age followed as iron became the dominant metal for tools and weapons." },
+
+  { q:"Who is often called the 'Father of Medicine' mentioned in the materials?", choices:["Hippocrates","Thales","Socrates","Aristotle"], answer:0, explain:"Hippocrates is recognized as the Father of Medicine and known for the Hippocratic Oath." },
+
+  { q:"Which pre-Socratic philosopher suggested that matter is made of indivisible particles (early idea of atoms)?", choices:["Democritus","Thales","Socrates","Plato"], answer:0, explain:"Democritus proposed the idea of atoms as indivisible particles." },
+
+  { q:"Which philosopher is famous for the Socratic Method and dialogues?", choices:["Socrates","Democritus","Hippocrates","Thales"], answer:0, explain:"Socrates is known for dialogues and the Socratic Method." },
+
+  { q:"Plato is noted for which contribution in the readings?", choices:["Founding the Academy","Inventing the wheel","Creating the compass","Developing the telephone"], answer:0, explain:"Plato founded the Academy and contributed to Western philosophical tradition." },
+
+  { q:"Aristotle believed what about elements, per the material?", choices:["Elements change when combined and have qualities based on observation","Elements are purely mystical and unknowable","Elements do not interact","Elements are opinions"], answer:0, explain:"Aristotle held that elements undergo changes and have observable qualities; he emphasized empirical observation." },
+
+  { q:"Which early transportation technology (in the PDF) was invented around 3500 BC and improved commerce?", choices:["The wheel","The compass","The telephone","The printing press"], answer:0, explain:"The wheel (around 3500 BC) enabled wheeled carts and better transport for goods." },
+
+  { q:"Gutenberg's printing press used movable type plus ink made from what ingredients (per notes)?", choices:["Linseed oil and soot","Water and clay","Gold and mercury","Pine resin only"], answer:0, explain:"Gutenberg's ink used linseed oil and soot to make durable printing ink." },
+
+  { q:"Which country is credited with early experimentation with lodestone to make compasses?", choices:["China","Egypt","Greece","Persia"], answer:0, explain:"Chinese sailors and scholars used lodestone to create early compasses." },
+
+  { q:"What major ethical concern was specifically listed as a threat to human survival?", choices:["Nuclear weapons","Invention of the wheel","Building the printing press","Discovery of electricity"], answer:0, explain:"Nuclear weapons (since 1945) were highlighted as posing grave risks to humanity." },
+
+  { q:"Which process extracts and melts metal ores to produce usable metal, mentioned under Bronze Age topics?", choices:["Smelting","Photosynthesis","Polymerization","Distillation"], answer:0, explain:"Smelting is the metallurgical process used to extract metals from ores." },
+
+  { q:"Which civilization is mentioned as entering the Bronze Age and known for early states/kingdoms in Mesopotamia?", choices:["Sumer and Babylonia","Aztec and Maya","Inca and Olmec","Xiongnu and Silla"], answer:0, explain:"Sumer and Babylonia in Mesopotamia were early Bronze Age states." },
+
+  { q:"Which period saw the rise of cities, writing systems, and major religions (referred to as Antiquity)?", choices:["Antiquity (600 BCE - 529 CE)","Neolithic only","Paleolithic only","20th Century"], answer:0, explain:"Antiquity features urbanization, writing systems (e.g., cuneiform), and major cultural developments." },
+
+  { q:"Which of these was a direct effect of the printing press described in the notes?", choices:["Rapid and widespread sharing of knowledge","Immediate invention of the telephone","Creation of the Internet","Invention of steel"], answer:0, explain:"The printing press facilitated rapid dissemination of books and ideas." },
+
+  { q:"What is an example of a social/cultural conflict caused by technology (per disadvantages listed)?", choices:["Military power and advanced weapons influencing wars","More leisure time for all","Universal education access","Reduced pollution"], answer:0, explain:"The notes mention advanced weapons influencing wars and contributing to social/cultural conflicts." },
+
+  { q:"Which of the following energy sources listed uses heat from the earth's subsurface?", choices:["Geothermal energy","Solar energy","Wind power","Coal"], answer:0, explain:"Geothermal energy harnesses heat from beneath Earth's surface to produce electricity." },
+
+  { q:"Which statement about the telephone is true according to the materials?", choices:["Alexander Graham Bell received the first patent for the electric telephone in 1876","Telephone invented in 1440","Telephone is older than the wheel","Telephone uses lodestone"], answer:0, explain:"Alexander Graham Bell received the first patent for the electric telephone in 1876." },
+
+  { q:"What concept describes technology as part of a cultural system, reflecting values and commerce?", choices:["Technology as a product (know-how, techniques)","Technology as unrelated to culture","Technology as purely religious","Technology as only art"], answer:0, explain:"Technology-as-product includes know-how, skills, and cultural context—shaping and reflecting values." },
+
+  { q:"Which innovation is specifically credited with enabling mariners to travel safely far from land?", choices:["Compass","Printing press","Telephone","Wheel"], answer:0, explain:"The compass enabled navigation away from landmarks and thus increased sea travel safely." },
+
+  { q:"Which of the following was listed as a negative consequence of technology on psychology and behavior?", choices:["Addiction to gadgets and overuse","Healthier lifestyles for everyone","Universal empathy","Infinite resources"], answer:0, explain:"The materials note psychological effects such as gadget addiction and overuse as negative consequences." },
+
+  { q:"Who among the following is credited with the idea that Earth floats on water (pre-Socratic)?", choices:["Thales","Socrates","Plato","Aristotle"], answer:0, explain:"Thales is credited with the claim that Earth floats on water among pre-Socratic ideas." },
+
+  { q:"Which of the following best matches the Neolithic innovations listed?", choices:["Advanced farming, home construction, and art","Nomadic hunting-only lifestyle","Use of steel armor","Modern computers"], answer:0, explain:"Neolithic innovations include agriculture, permanent homes, and developments in art." },
+
+  { q:"Which empire/region was mentioned in relation to early iron/steel use and armored cavalry?", choices:["Persians","Aztecs","Medieval Japan only","Incan Empire"], answer:0, explain:"The Persians were noted for developing armored cavalry using steel armor." },
+
+  { q:"Which early internet precursor used packet switching and connected government agency computers?", choices:["ARPANET","Gutenberg Network","Lodestone Net","WheelNet"], answer:0, explain:"ARPANET used packet-switching to connect agencies; it's a direct ancestor of the modern Internet." }
+  /* end bank (40+ questions) */
+];
+
+/* ---------- app logic ---------- */
+const TOTAL_TO_PICK = 30;
+let currentQuestions = []; // chosen 30
+let userAnswers = {};      // qIndex -> chosenIndex
+const quizArea = document.getElementById('quizArea');
+const submitBtn = document.getElementById('submitBtn');
+const startBtn = document.getElementById('startBtn');
+const shuffleBtn = document.getElementById('shuffleBtn');
+const showAnswersBtn = document.getElementById('showAnswersBtn');
+const restartBtn = document.getElementById('restartBtn');
+const resultCard = document.getElementById('resultCard');
+const answersContainer = document.getElementById('answersContainer');
+const scoreText = document.getElementById('scoreText');
+const percentBadge = document.getElementById('percentBadge');
+const gradeMsg = document.getElementById('gradeMsg');
+const highestEl = document.getElementById('highest');
+
+/* load highest score from localStorage */
+function loadHighest(){
+  const h = localStorage.getItem('sts_highest_score');
+  if(h!==null) highestEl.textContent = h;
+  else highestEl.textContent = '--';
+}
+loadHighest();
+
+function pickRandomQuestions(){
+  // shuffle bank and pick first TOTAL_TO_PICK
+  const bank = QUESTION_BANK.slice();
+  for(let i=bank.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [bank[i],bank[j]]=[bank[j],bank[i]]; }
+  return bank.slice(0, TOTAL_TO_PICK);
+}
+
+function renderQuiz(){
+  quizArea.innerHTML = '';
+  userAnswers = {};
+  currentQuestions.forEach((qobj, idx) => {
+    const qDiv = document.createElement('div');
+    qDiv.className = 'question';
+    qDiv.id = 'q'+idx;
+    const num = idx+1;
+    const title = document.createElement('div');
+    title.className = 'q-title';
+    title.textContent = `${num}. ${qobj.q}`;
+    qDiv.appendChild(title);
+
+    const opts = document.createElement('div');
+    opts.className = 'options';
+    qobj.choices.forEach((c,optIndex)=>{
+      const id = `q${idx}_opt${optIndex}`;
+      const lbl = document.createElement('label');
+      lbl.htmlFor = id;
+      const r = document.createElement('input');
+      r.type='radio'; r.name='q'+idx; r.id=id; r.value=optIndex;
+      r.style.marginRight='8px';
+      r.addEventListener('change', ()=>{ userAnswers[idx]=parseInt(r.value); });
+      lbl.appendChild(r);
+      const span = document.createElement('span');
+      span.textContent = c;
+      lbl.appendChild(span);
+      opts.appendChild(lbl);
+    });
+
+    qDiv.appendChild(opts);
+    quizArea.appendChild(qDiv);
+  });
+
+  submitBtn.style.display = 'inline-block';
+  showAnswersBtn.style.display = 'none';
+  restartBtn.style.display = 'inline-block';
+  resultCard.style.display = 'none';
+  answersContainer.innerHTML = '';
+  // scroll to top
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* start new quiz */
+startBtn.addEventListener('click', ()=>{
+  currentQuestions = pickRandomQuestions();
+  renderQuiz();
+});
+
+/* shuffle (reshuffle current set, keep same questions order randomized) */
+shuffleBtn.addEventListener('click', ()=>{
+  if(currentQuestions.length===0){ alert('Start a quiz first.'); return; }
+  // shuffle currentQuestions in-place
+  for(let i=currentQuestions.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [currentQuestions[i],currentQuestions[j]]=[currentQuestions[j],currentQuestions[i]]; }
+  renderQuiz();
+});
+
+/* submit */
+submitBtn.addEventListener('click', ()=>{
+  // ensure all answered? We'll allow partial but warn
+  let answeredCount = Object.keys(userAnswers).length;
+  if(answeredCount < TOTAL_TO_PICK){
+    if(!confirm(`You answered ${answeredCount}/${TOTAL_TO_PICK}. Submit anyway?`)) return;
+  }
+  gradeQuiz();
+});
+
+/* show answers button */
+showAnswersBtn.addEventListener('click', ()=> {
+  // scroll to answers
+  resultCard.scrollIntoView({behavior:'smooth'});
+});
+
+/* restart */
+restartBtn.addEventListener('click', ()=>{
+  if(confirm('Start a fresh quiz (new random 30)?')) {
+    currentQuestions = pickRandomQuestions();
+    renderQuiz();
+  }
+});
+
+/* grading and display */
+function gradeQuiz(){
+  let correct = 0;
+  answersContainer.innerHTML = '';
+  currentQuestions.forEach((qobj, idx) => {
+    const user = userAnswers[idx];
+    const correctIdx = qobj.answer;
+    if(user !== undefined && user === correctIdx) correct++;
+    // create display row
+    const row = document.createElement('div');
+    row.className = 'answer-row ' + (user === correctIdx ? 'correct' : 'wrong');
+
+    const qh = document.createElement('div');
+    qh.innerHTML = `<strong>${idx+1}.</strong> ${qobj.q}`;
+    row.appendChild(qh);
+
+    const ua = document.createElement('div');
+    ua.className = 'ua';
+    const userText = user===undefined ? '<em>No answer</em>' : qobj.choices[user];
+    ua.innerHTML = `Your answer: <span class="${user===correctIdx ? 'highlight-correct' : 'highlight-wrong'}">${userText}</span>`;
+    row.appendChild(ua);
+
+    const ca = document.createElement('div');
+    ca.innerHTML = `Correct answer: <strong>${qobj.choices[correctIdx]}</strong>`;
+    row.appendChild(ca);
+
+    const ex = document.createElement('div');
+    ex.className = 'explain';
+    ex.textContent = 'Explanation: ' + qobj.explain;
+    row.appendChild(ex);
+
+    answersContainer.appendChild(row);
+  });
+
+  // compute percent
+  const percent = Math.round((correct / TOTAL_TO_PICK) * 100);
+  scoreText.textContent = `Score: ${correct} / ${TOTAL_TO_PICK}`;
+  percentBadge.textContent = `${percent}%`;
+
+  // grade message per thresholds
+  let msg = '';
+  if(correct >= Math.ceil(0.9 * TOTAL_TO_PICK)) msg = 'Sobrang Talino Mo';
+  else if(correct >= Math.ceil(0.8 * TOTAL_TO_PICK)) msg = 'Talino Mo';
+  else if(correct >= Math.ceil(0.7 * TOTAL_TO_PICK)) msg = 'Pwede na';
+  else msg = 'BOBO MO!!!';
+
+  gradeMsg.textContent = msg;
+
+  // show result card
+  resultCard.style.display = 'block';
+  submitBtn.style.display = 'none';
+  showAnswersBtn.style.display = 'inline-block';
+
+  // save highest score
+  const prev = localStorage.getItem('sts_highest_score');
+  const prevNum = prev ? parseInt(prev) : 0;
+  if(correct > prevNum){
+    localStorage.setItem('sts_highest_score', String(correct));
+    highestEl.textContent = String(correct);
+    // highlight improvement
+    alert('New highest score! 🎉');
+  }
+  // scroll to results
+  resultCard.scrollIntoView({behavior:'smooth'});
+}
+
+/* initialize small demo: pick a set automatically so user sees something */
+(function initAuto(){
+  currentQuestions = pickRandomQuestions();
+  renderQuiz();
+  loadHighest();
+})();
+</script>
+</body>
+</html>
